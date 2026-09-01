@@ -1,0 +1,22 @@
+{
+  "name": "ai-sales-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:agents": "pnpm --filter @ai-crm/agents dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:up": "node scripts/db.mjs up",
+    "db:down": "node scripts/db.mjs down",
+    "db:migrate": "pnpm --filter @ai-crm/database migrate",
+    "db:seed": "pnpm --filter @ai-crm/database seed"
+  }
+}

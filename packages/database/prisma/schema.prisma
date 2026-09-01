@@ -1,0 +1,482 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- Auth & org ----------------
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALES_REP
+  VIEWER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(SALES_REP)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  companies      Company[]   @relation("CompanyOwner")
+  contacts       Contact[]   @relation("ContactOwner")
+  deals          Deal[]      @relation("DealOwner")
+  assignedTasks  Task[]      @relation("TaskAssignee")
+  createdTasks   Task[]      @relation("TaskCreator")
+  notes          Note[]      @relation("NoteAuthor")
+  activities     Activity[]  @relation("ActivityActor")
+  auditLogs      AuditLog[]  @relation("AuditActor")
+  approvals      Approval[]  @relation("ApprovalReviewer")
+  leads          Lead[]      @relation("LeadCreator")
+  emailApprovals EmailMessage[] @relation("EmailApprover")
+}
+
+// ---------------- CRM core ----------------
+
+model Company {
+  id            String    @id @default(uuid())
+  name          String
+  domain        String?   @unique
+  website       String?
+  industry      String?
+  employeeCount Int?
+  hqLocation    String?
+  linkedinUrl   String?
+  description   String?   @db.Text
+  enrichment    Json?
+  ownerId       String?
+  owner         User?     @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  contacts   Contact[]
+  deals      Deal[]
+  activities Activity[]
+  notes      Note[]
+  tasks      Task[]
+  emails     EmailMessage[]
+  leads      Lead[]         @relation("ConvertedCompany")
+
+  @@index([name])
+  @@index([ownerId])
+}
+
+model Contact {
+  id            String    @id @default(uuid())
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  title         String?
+  linkedinUrl   String?
+  isDecisionMaker Boolean @default(false)
+  decisionScore Int?
+  enrichment    Json?
+  ownerId       String?
+  owner         User?     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  deals      Deal[]
+  activities Activity[]
+  notes      Note[]
+  tasks      Task[]
+  emails     EmailMessage[]
+  leads      Lead[]         @relation("ConvertedContact")
+
+  @@index([companyId])
+  @@index([email])
+  @@index([lastName, firstName])
+}
+
+enum DealStage {
+  NEW
+  QUALIFIED
+  DISCOVERY
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+model Deal {
+  id                String     @id @default(uuid())
+  title             String
+  companyId         String
+  company           Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId         String?
+  contact           Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  stage             DealStage  @default(NEW)
+  status            DealStatus @default(OPEN)
+  value             Decimal    @default(0) @db.Decimal(14, 2)
+  currency          String     @default("USD")
+  probability       Int?
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  position          Int        @default(0)
+  ownerId           String?
+  owner             User?      @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+
+  activities Activity[]
+  notes      Note[]
+  tasks      Task[]
+  emails     EmailMessage[]
+  leads      Lead[]         @relation("ConvertedDeal")
+
+  @@index([stage, status])
+  @@index([ownerId])
+  @@index([companyId])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.Text
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  completedAt DateTime?
+  dealId      String?
+  deal        Deal?        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId   String?
+  contact     Contact?     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  companyId   String?
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdById String?
+  creator     User?        @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status, dueDate])
+  @@index([assigneeId])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  body      String   @db.Text
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation("NoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dealId])
+  @@index([contactId])
+  @@index([companyId])
+}
+
+// ---------------- Unified activity timeline ----------------
+
+enum ActivityType {
+  NOTE
+  CALL
+  MEETING
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  STAGE_CHANGE
+  ENRICHMENT
+  QUALIFICATION
+  APPROVAL
+  WEBHOOK
+  AGENT_RUN
+  SYSTEM
+}
+
+model Activity {
+  id        String       @id @default(uuid())
+  type      ActivityType
+  subject   String
+  body      String?      @db.Text
+  occurredAt DateTime    @default(now())
+  companyId String?
+  company   Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact?     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  dealId    String?
+  deal      Deal?        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?        @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+  meta      Json?
+
+  @@index([dealId, occurredAt])
+  @@index([contactId, occurredAt])
+  @@index([companyId, occurredAt])
+}
+
+model EmailMessage {
+  id         String   @id @default(uuid())
+  companyId  String?
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId  String?
+  contact    Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  dealId     String?
+  deal       Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  leadId     String?
+  lead       Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  direction  String   @default("outbound") // outbound | inbound
+  status     String   @default("draft") // draft | pending_approval | approved | sent | failed
+  subject    String
+  body       String   @db.Text
+  aiMeta     Json?
+  approvedById String?
+  approvedBy User?    @relation("EmailApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt DateTime?
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  approvals Approval[]
+
+  @@index([status])
+  @@index([leadId])
+}
+
+// ---------------- Leads & AI pipeline ----------------
+
+enum LeadStatus {
+  NEW
+  RESEARCHING
+  ENRICHING
+  IDENTIFYING
+  QUALIFYING
+  DRAFTING
+  PENDING_APPROVAL
+  APPROVED
+  CONVERTED
+  REJECTED
+  FAILED
+}
+
+enum LeadTier {
+  HOT
+  WARM
+  COLD
+  UNQUALIFIED
+}
+
+model Lead {
+  id             String     @id @default(uuid())
+  source         String     @default("manual") // manual | webhook | n8n | csv | api
+  companyName    String
+  domain         String?
+  website        String?
+  contactFirstName String?
+  contactLastName  String?
+  contactEmail   String?
+  contactTitle   String?
+  notes          String?    @db.Text
+  status         LeadStatus @default(NEW)
+  tier           LeadTier?
+  score          Int?
+  research       Json?
+  enrichment     Json?
+  decisionMakers Json?
+  qualification  Json?
+  error          String?
+  attempts       Int        @default(0)
+  convertedCompanyId String?
+  convertedCompany   Company? @relation("ConvertedCompany", fields: [convertedCompanyId], references: [id], onDelete: SetNull)
+  convertedContactId String?
+  convertedContact   Contact? @relation("ConvertedContact", fields: [convertedContactId], references: [id], onDelete: SetNull)
+  convertedDealId     String?
+  convertedDeal       Deal?    @relation("ConvertedDeal", fields: [convertedDealId], references: [id], onDelete: SetNull)
+  createdById   String?
+  creator       User?      @relation("LeadCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  jobs        PipelineJob[]
+  agentRuns   AgentRun[]
+  approvals   Approval[]
+  emails      EmailMessage[]
+
+  @@index([status])
+  @@index([companyName])
+}
+
+// ---------------- Background jobs & agent runs ----------------
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  RETRYING
+  DEAD
+}
+
+model PipelineJob {
+  id          String    @id @default(uuid())
+  type        String
+  payload     Json?
+  status      JobStatus @default(QUEUED)
+  priority    Int       @default(0)
+  runAt       DateTime  @default(now())
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?   @db.Text
+  result      Json?
+  dedupeKey   String?   @unique
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  agentRunId  String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, runAt, priority])
+}
+
+enum AgentRunKind {
+  PIPELINE
+  RESEARCH
+  ENRICHMENT
+  IDENTIFY
+  QUALIFY
+  PERSONALIZE
+  FOLLOWUP
+}
+
+model AgentRun {
+  id          String       @id @default(uuid())
+  leadId      String?
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  kind        AgentRunKind @default(PIPELINE)
+  status      String       @default("pending") // pending | running | succeeded | failed
+  currentStep String?
+  steps       Json?
+  error       String?      @db.Text
+  provider    String?
+  model       String?
+  tokensUsed  Int?
+  costMicros  Int?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([leadId, createdAt])
+}
+
+// ---------------- Approvals ----------------
+
+model Approval {
+  id        String    @id @default(uuid())
+  leadId    String?
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  emailId   String?
+  email     EmailMessage? @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  status    String    @default("pending") // pending | approved | rejected | edited
+  reviewerId String?
+  reviewer  User?     @relation("ApprovalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  feedback  String?   @db.Text
+  decidedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([status])
+}
+
+// ---------------- Webhooks ----------------
+
+model WebhookEvent {
+  id            String    @id @default(uuid())
+  source        String    @default("external") // n8n | external
+  event         String
+  payload       Json
+  signatureValid Boolean?
+  status        String    @default("received") // received | processed | failed
+  resultLeadId  String?
+  error         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  processedAt   DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WebhookEndpoint {
+  id        String   @id @default(uuid())
+  url       String
+  secret    String
+  events    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WebhookDelivery {
+  id             String    @id @default(uuid())
+  endpointId     String?
+  url            String
+  event          String
+  payload        Json
+  status         String    @default("pending") // pending | success | failed
+  responseStatus Int?
+  attempts       Int       @default(0)
+  lastError      String?   @db.Text
+  createdAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+
+  @@index([status])
+}
+
+// ---------------- Audit ----------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
