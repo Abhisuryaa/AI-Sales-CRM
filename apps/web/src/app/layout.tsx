@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Figtree, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Chakra_Petch, Geist_Mono, Source_Sans_3 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+const bebas = Bebas_Neue({
+  weight: "400",
   variable: "--font-display",
   subsets: ["latin"],
 });
 
-const figtree = Figtree({
+const sourceSans = Source_Sans_3({
   variable: "--font-body",
+  subsets: ["latin"],
+});
+
+const chakra = Chakra_Petch({
+  weight: ["400", "500", "600"],
+  variable: "--font-label",
   subsets: ["latin"],
 });
 
@@ -30,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${bricolage.variable} ${figtree.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${bebas.variable} ${sourceSans.variable} ${chakra.variable} ${geistMono.variable} antialiased`}>
         {children}
         <Toaster richColors position="bottom-right" />
       </body>

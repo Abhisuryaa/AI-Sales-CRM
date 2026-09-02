@@ -6,13 +6,16 @@ import { PipelineWalkthrough } from "@/components/landing/pipeline-walkthrough";
 import { auth } from "@/auth";
 
 /**
- * DESIGN CONTRACT — "Live Wire"
+ * DESIGN CONTRACT — "Forge"
  * THESIS: the hero is the mechanism — a live, looping simulation of the real
- * AI pipeline; agents are circles, the human approval gate is a square.
- * Refuses the stock hero (headline-plus-screenshot, gradient orb).
- * OWN-WORLD: ink-blue terminal ground #0B1220, paper cards #F2F5FA, wire
- * hairlines #2A3A55, signal amber #FFB224 for the human gate. Type:
- * Bricolage Grotesque display, Figtree body, Martian Mono data.
+ * AI pipeline as a forge run: agents are circles, the human gate is a square
+ * that quenches. Refuses the stock hero (headline-plus-screenshot, gradient orb).
+ * OWN-WORLD: warm graphite ground #17150F with film grain, bone type #F2EAD8,
+ * hairline seams #3A3427, heat orange #FF5C1F = AI activity, quench teal
+ * #2DD4BF = human verdict, copper #C08552 chrome. Sharp corners, uppercase
+ * labels. Type: Bebas Neue display, Source Sans 3 body, Chakra Petch labels,
+ * Geist Mono data. DB-derived: luxury-dark ground + cyberpunk energy +
+ * Bold Statement pairing, fused away from every default cluster.
  * STORY: watch a lead run the pipeline, watch a human stamp it, open the app.
  * FIRST VIEWPORT: sim stage fills the fold — 8-station track, live lead card,
  * counting score, amber APPROVE stamp; CTA bottom-left of the stage.
@@ -50,8 +53,8 @@ export default async function LandingPage() {
 
   return (
     <div className="lp">
-      {/* Design contract: see the module-level comment. Live Wire direction. */}
-      <div hidden dangerouslySetInnerHTML={{ __html: "<!-- DESIGN CONTRACT Live Wire / seed: livewire-2024 / source: apps/web/src/app/page.tsx header -->" }} />
+      {/* Design contract: see the module-level comment. Forge direction. */}
+      <div hidden dangerouslySetInnerHTML={{ __html: "<!-- DESIGN CONTRACT Live Wire / seed: forge-2024 / source: apps/web/src/app/page.tsx header -->" }} />
       <header className="lp-nav">
         <span className="lp-logo">AI Sales CRM</span>
         <nav className="lp-nav-links">
@@ -74,13 +77,14 @@ export default async function LandingPage() {
           <div className="lp-hero-copy">
             <p className="lp-kicker mono">RESEARCH → QUALIFY → DRAFT → YOU APPROVE</p>
             <h1>
-              Your leads run the gauntlet.
+              Raw leads in.
               <br />
-              <em>You sign the sends.</em>
+              <em>Signed deals out.</em>
             </h1>
             <p className="lp-sub">
-              An AI CRM where agents research, enrich, qualify, and draft — and a
-              human approves every email before it leaves. Watch it work below.
+              Agents research, enrich, qualify, and draft in the heat of the
+              pipeline. <strong>Nothing ships until a human cools it.</strong>{" "}
+              Watch a lead run the gauntlet below.
             </p>
           </div>
           <PipelineHero />
@@ -94,13 +98,14 @@ export default async function LandingPage() {
           <AgentTicker />
           <p className="lp-band-note">
             The agents service is a separate FastAPI app with its own queue, Redis
-            locks, and retry policy — the CRM talks to it over HTTP, so AI is a
+            locks, and retry policy — the CRM talks to it over HTTP. AI is a
             component, not a coupler.
           </p>
         </section>
 
         <section className="lp-features" id="features">
-          <h2 className="mono">WHAT&rsquo;S INSIDE</h2>
+          <p className="mono">SPEC SHEET</p>
+          <h2>EVERYTHING IN THE BOX</h2>
           <div className="lp-feature-grid">
             {FEATURES.map((f) => (
               <div className="lp-feature" key={f.name}>
@@ -112,7 +117,8 @@ export default async function LandingPage() {
         </section>
 
         <section className="lp-pipeline" id="pipeline">
-          <h2 className="mono">TEN STEPS, ONE PIPELINE</h2>
+          <p className="mono">WALK THE LINE</p>
+          <h2>TEN STEPS, ONE PIPELINE</h2>
           <p className="lp-pipeline-sub">
             Each step is a real endpoint in this codebase — scroll to walk it.
           </p>
@@ -120,7 +126,8 @@ export default async function LandingPage() {
         </section>
 
         <section className="lp-stack" id="stack">
-          <h2 className="mono">BUILT FROM PARTS YOU KNOW</h2>
+          <p className="mono">TOOLING</p>
+          <h2>BUILT FROM PARTS YOU KNOW</h2>
           <ul className="lp-stack-list">
             {STACK.map((s) => (
               <li key={s}>{s}</li>
