@@ -1,0 +1,21 @@
+# Build-context hygiene for apps/web (applies when the Docker build context is
+# apps/web itself; the compose stack builds from the repo root instead, which
+# uses the root .dockerignore).
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+.turbo/
+.eslintcache
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+Dockerfile
+.dockerignore

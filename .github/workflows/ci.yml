@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-typecheck-build:
+    name: Web — typecheck + build
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/ai_sales_crm
+      NEXTAUTH_SECRET: ci-placeholder-secret-value-32-chars
+      NEXTAUTH_URL: http://localhost:3000
+      AGENTS_API_URL: http://127.0.0.1:8000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @ai-crm/database db:generate
+
+      - name: Typecheck workspace
+        run: pnpm -r typecheck
+
+      - name: Build web
+        run: pnpm --filter web build
+
+  agents-test:
+    name: Agents — sync + import smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/agents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/agents/uv.lock
+
+      - name: Sync dependencies (frozen)
+        run: uv sync --frozen --no-install-project
+
+      - name: Import app.main
+        run: uv run --no-sync python -c "import app.main"
+
+      - name: Smoke — FastAPI routes registered
+        run: |
+          uv run --no-sync python - <<'PY'
+          from app.main import app
+          routes = {getattr(r, "path", "") for r in app.routes}
+          expected = {"/health", "/pipeline/leads/{lead_id}/run",
+                      "/webhooks/inbound", "/automations/n8n/trigger-followups"}
+          missing = expected - routes
+          assert not missing, f"missing routes: {missing}"
+          print(f"ok: {len(routes)} routes, all expected present")
+          PY

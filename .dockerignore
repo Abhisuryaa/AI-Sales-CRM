@@ -1,0 +1,46 @@
+# Repo-root build-context hygiene (Dockerfiles with a root or apps/web context).
+.git/
+.github/
+node_modules/
+**/node_modules/
+.pnpm-store/
+.next/
+**/.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+
+# Python artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+**/.venv/
+venv/
+.uv-cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local env — runtime config comes from compose environment, never the image.
+.env
+.env.*
+!.env.example
+services/agents/.env
+
+# Portable local service binaries + data (scripts/db.mjs), never in images.
+/services/
+# Logs, editor, OS
+*.log
+logs/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.pid
+/tmp/
+/docs/
+/n8n/
+/README.md

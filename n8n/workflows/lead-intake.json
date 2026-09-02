@@ -1,0 +1,240 @@
+{
+  "id": "f3a9c1d2-7b4e-4c8a-9d21-5e6f7a8b9c01",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-200, 0],
+      "webhookId": "lead-intake"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateInput": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000001",
+              "name": "companyName",
+              "value": "={{ $json.body.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000002",
+              "name": "domain",
+              "value": "={{ $json.body.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000003",
+              "name": "website",
+              "value": "={{ $json.body.website }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000004",
+              "name": "contactFirstName",
+              "value": "={{ $json.body.contactFirstName }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000005",
+              "name": "contactLastName",
+              "value": "={{ $json.body.contactLastName }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000006",
+              "name": "contactEmail",
+              "value": "={{ $json.body.contactEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000007",
+              "name": "contactTitle",
+              "value": "={{ $json.body.contactTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000008",
+              "name": "source",
+              "value": "={{ $json.body.source || 'n8n' }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-0000-4000-8000-000000000009",
+              "name": "notes",
+              "value": "={{ $json.body.notes }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000002",
+      "name": "Map Lead Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [20, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://agents:8000/webhooks/inbound",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "={{ $env.WEBHOOK_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000003",
+      "name": "Create Lead + Start Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1d2e3f4-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.leadId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000004",
+      "name": "Lead Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [460, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"leadId\": $('Create Lead + Start Pipeline').item.json.leadId, \"status\": \"accepted\" } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000005",
+      "name": "Respond 202",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, -80]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"agents service did not return a leadId\", \"detail\": $('Create Lead + Start Pipeline').item.json } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "a1b2c3d4-0000-4000-8000-000000000006",
+      "name": "Respond 502",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 80]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Map Lead Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Lead Fields": {
+      "main": [
+        [
+          {
+            "node": "Create Lead + Start Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead + Start Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Lead Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Created?": {
+      "main": [
+        [
+          {
+            "node": "Respond 202",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 502",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "active": false,
+  "tags": [
+    {
+      "name": "ai-sales-crm"
+    }
+  ]
+}
