@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+
 import { AgentTicker } from "@/components/landing/agent-ticker";
 import { PipelineHero } from "@/components/landing/pipeline-hero";
 import { PipelineWalkthrough } from "@/components/landing/pipeline-walkthrough";
@@ -63,11 +67,17 @@ export default async function LandingPage() {
           <a href="#stack">Stack</a>
         </nav>
         {session?.user ? (
-          <Link href="/dashboard" className="lp-btn lp-btn-primary">Open app</Link>
+          <Button asChild size="sm">
+            <Link href="/dashboard">Open app</Link>
+          </Button>
         ) : (
           <div className="lp-nav-cta">
-            <Link href="/login" className="lp-btn lp-btn-ghost">Sign in</Link>
-            <Link href="/login" className="lp-btn lp-btn-primary">Open the app</Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/login">Sign in</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/login">Open the app</Link>
+            </Button>
           </div>
         )}
       </header>
@@ -89,8 +99,10 @@ export default async function LandingPage() {
           </div>
           <PipelineHero />
           <div className="lp-hero-foot">
-            <Link href="/login" className="lp-btn lp-btn-primary">Open the app</Link>
-            <span className="lp-foot-hint mono">admin@acme.test · admin1234</span>
+            <Button asChild>
+              <Link href="/login">Open the app</Link>
+            </Button>
+            <Badge variant="outline" className="lp-foot-hint mono">admin@acme.test · admin1234</Badge>
           </div>
         </section>
 
@@ -142,13 +154,17 @@ export default async function LandingPage() {
             deterministic mock provider — no API keys needed to try it.
           </p>
           <div className="lp-cta-row">
-            <Link href="/login" className="lp-btn lp-btn-primary">Open the app</Link>
-            <Link href="#pipeline" className="lp-btn lp-btn-ghost">Re-read the pipeline</Link>
+            <Button asChild>
+              <Link href="/login">Open the app</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="#pipeline">Re-read the pipeline</Link>
+            </Button>
           </div>
-          <div className="lp-cta-logins mono">
-            <span>admin@acme.test · admin1234</span>
-            <span>manager@acme.test · manager1234</span>
-            <span>rep@acme.test · rep1234</span>
+          <div className="lp-cta-logins">
+            <Badge variant="outline" className="mono">admin@acme.test · admin1234</Badge>
+            <Badge variant="outline" className="mono">manager@acme.test · manager1234</Badge>
+            <Badge variant="outline" className="mono">rep@acme.test · rep1234</Badge>
           </div>
         </section>
       </main>
